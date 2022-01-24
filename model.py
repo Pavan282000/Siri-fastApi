@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-graphdb = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "qwerty"), max_connection_lifetime=1)
+graphdb = GraphDatabase.driver(uri="neo4j+s://f951f243.databases.neo4j.io", auth=("neo4j", "08_xJvvomlHaYsaUnUfXiM8hFQmvRijMzPDed63f_y0"), max_connection_lifetime=1)
 session = graphdb.session()
 
 @app.post('/addParentNode',tags=["Organisation"])
