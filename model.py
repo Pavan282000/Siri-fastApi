@@ -10,8 +10,6 @@ from typing import List, Optional
 import uvicorn as uvicorn
 import numpy as np
 
-import siri as si
-
 
 app = FastAPI()
 
@@ -29,7 +27,7 @@ session = graphdb.session()
 @app.post('/addParentNode',tags=["Organisation"])
 async def addParentNode():
     q2 = '''CREATE (ParentNode: Survey{name:"Survey"}) '''
-    q3 = """ CREATE (m: Models{name:"Models"})"""
+    q3 = """ CREATE (d: Dimension{name:"Dimension"})"""
     result = session.run(q2)
     session.run(q3)
     data = result.data()
@@ -47,15 +45,6 @@ async def organisationDetails(name,sector):
     return ("Organisation node added")
 
 
-@app.get('/getCompanies1' ,tags=["Organisation"])
-async def getComapnies1():
-
-    q2 = '''MATCH (n:Organisation) RETURN  (n.name) as Organisations ,(n.sector) as Sector  ORDER BY n.name'''
-    result = session.run(q2)
-    data = result.data()
-    json_data = jsonable_encoder(data)
-    print(json_data)
-    return (json_data)
 
 
 @app.get('/getCompanies' ,tags=["Organisation"])
