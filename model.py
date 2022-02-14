@@ -490,6 +490,19 @@ async def insert():
 
     return "Done"
 
+@app.get('/insert2' ,tags=["DataFrame"])
+async def insert2():
+    # orgName: str, sname: str
+ #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
+ # '''
+ #    x = {"orgName":orgName,"sname":sname}
+ #    result = session.run(q2,x)
+ #    data = result.data()
+ #    json_data = jsonable_encoder(data)
+
+
+    return MPI.table
+
 
 @app.get('/getAdjustedHeadCount' ,tags=["DataFrame"])
 async def adjustHeacount():
