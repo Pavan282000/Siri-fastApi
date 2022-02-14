@@ -62,6 +62,7 @@ class MPI:
         MPI.table[self.name] = {}
         for i in self.d:
             MPI.table[self.name][i['Dim']] = i['value']
+        print(MPI.table)
 
     @staticmethod
     def findDeprivation_matrix():
@@ -473,7 +474,7 @@ com4 = [
 ]
 
 
-@app.get('/insert' ,tags=["DataFrame"])
+@app.post('/insert' ,tags=["DataFrame"])
 async def insert():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
