@@ -9,7 +9,6 @@ from typing import List, Optional
 
 import uvicorn as uvicorn
 import numpy as np
-import numpy as np
 
 
 
