@@ -473,9 +473,8 @@ com4 = [
     }
 ]
 
-
-@app.post('/insert' ,tags=["DataFrame"])
-async def insert():
+@app.get('/insert' ,tags=["DataFrame"])
+def insert():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -492,7 +491,7 @@ async def insert():
     return "Done"
 
 @app.get('/insert2' ,tags=["DataFrame"])
-async def insert2():
+def insert2():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -506,7 +505,7 @@ async def insert2():
 
 
 @app.get('/getAdjustedHeadCount' ,tags=["DataFrame"])
-async def adjustHeacount():
+def adjustHeacount():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -537,7 +536,7 @@ async def Uncensored():
 
 
 @app.get('/getCensoredHeadCount' ,tags=["DataFrame"])
-async def censored():
+def censored():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
