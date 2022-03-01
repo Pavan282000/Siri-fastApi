@@ -4,15 +4,12 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, validator
 from fastapi.middleware.cors import CORSMiddleware
 from neo4j import GraphDatabase
-from typing import List, Optional
 
 
 import uvicorn as uvicorn
 import numpy as np
-
-
-
 import pandas as pd
+
 
 
 cutoff = {
@@ -62,7 +59,6 @@ class MPI:
         MPI.table[self.name] = {}
         for i in self.d:
             MPI.table[self.name][i['Dim']] = i['value']
-        print(MPI.table)
 
     @staticmethod
     def findDeprivation_matrix():
@@ -185,6 +181,23 @@ class MPI:
         return new_adjusted_headcount
 
 
+# MPI(com1,"Com1")
+# MPI(com2,"Com2")
+# MPI(com3,"Com3")
+# MPI(com4,"Com4")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -202,10 +215,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-graphdb = GraphDatabase.driver(uri="neo4j+s://f951f243.databases.neo4j.io", auth=("neo4j", "08_xJvvomlHaYsaUnUfXiM8hFQmvRijMzPDed63f_y0"), max_connection_lifetime=1)
+graphdb = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "yash"), max_connection_lifetime=1)
+# graphdb = GraphDatabase.driver(uri="neo4j+s://f951f243.databases.neo4j.io", auth=("neo4j", "08_xJvvomlHaYsaUnUfXiM8hFQmvRijMzPDed63f_y0"), max_connection_lifetime=1)
 session = graphdb.session()
-
-
 
 
 com1 = [
@@ -473,8 +485,9 @@ com4 = [
     }
 ]
 
+
 @app.get('/insert' ,tags=["DataFrame"])
-def insert():
+async def insert():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -490,22 +503,9 @@ def insert():
 
     return "Done"
 
-@app.get('/insert2' ,tags=["DataFrame"])
-def insert2():
-    # orgName: str, sname: str
- #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
- # '''
- #    x = {"orgName":orgName,"sname":sname}
- #    result = session.run(q2,x)
- #    data = result.data()
- #    json_data = jsonable_encoder(data)
-
-
-    return MPI.table
-
 
 @app.get('/getAdjustedHeadCount' ,tags=["DataFrame"])
-def adjustHeacount():
+async def insert():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -513,10 +513,10 @@ def adjustHeacount():
  #    result = session.run(q2,x)
  #    data = result.data()
  #    json_data = jsonable_encoder(data)
-
 
     k = MPI.adjusted_headCount()
     m = k[0]
+    # print(m)
     return m
 
 
@@ -532,11 +532,12 @@ async def Uncensored():
 
 
     k = MPI.UnCensored_HeadCountRatio()
+    # print(k)
     return k
 
 
 @app.get('/getCensoredHeadCount' ,tags=["DataFrame"])
-def censored():
+async def censored():
     # orgName: str, sname: str
  #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) return v.name as Dim,v.value as value
  # '''
@@ -545,29 +546,14 @@ def censored():
  #    data = result.data()
  #    json_data = jsonable_encoder(data)
     k = MPI.Censored_HeadCountRatio()
+    # print(k)
     return k
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @app.post('/addParentNode',tags=["Organisation"])
 async def addParentNode():
+
     q2 = '''CREATE (ParentNode: Survey{name:"Survey"}) '''
-    q3 = """ CREATE (d: Dimension{name:"Dimension"})"""
+    q3 = """ CREATE (m: Models{name:"Models"})"""
     result = session.run(q2)
     session.run(q3)
     data = result.data()
@@ -585,6 +571,15 @@ async def organisationDetails(name,sector):
     return ("Organisation node added")
 
 
+@app.get('/getCompanies1' ,tags=["Organisation"])
+async def getComapnies1():
+
+    q2 = '''MATCH (n:Organisation) RETURN  (n.name) as Organisations ,(n.sector) as Sector  ORDER BY n.name'''
+    result = session.run(q2)
+    data = result.data()
+    json_data = jsonable_encoder(data)
+    print(json_data)
+    return (json_data)
 
 
 @app.get('/getCompanies' ,tags=["Organisation"])
@@ -612,7 +607,6 @@ async def getModels():
 class Model(BaseModel):
     name: str
     description: str
-
     dimensions:int
 
 
@@ -631,13 +625,15 @@ class Dimension(BaseModel):
     weight:float
     CutOff:float
     Rating: list
+    rank: int
 
 
 
 @app.post('/postDimension',tags=["Dimension"])
 async def postDimension(name:str,dim:Dimension):
-    q2 = '''match(m:Model{name:$name}) create (m)-[:hasDimension]->(d:Dimension{name:$dimName,description:$description,weight:$weight,cutOff:$cutOff,Rating:$rating})'''
-    x={"name":name,"description":dim.desc,"weight":dim.weight,"cutOff":dim.CutOff,"rating":dim.Rating,"dimName":dim.name}
+    q2 = '''match(m:Model{name:$name}) create (m)-[:hasDimension]->
+    (d:Dimension{name:$dimName,description:$description,weight:$weight,cutOff:$cutOff,Rating:$rating, rank:$rank})'''
+    x={"name":name,"description":dim.desc,"weight":dim.weight,"cutOff":dim.CutOff,"rating":dim.Rating,"dimName":dim.name,"rank":dim.rank}
     result = session.run(q2,x)
     data = result.data()
     json_data = jsonable_encoder(data)
@@ -646,8 +642,13 @@ async def postDimension(name:str,dim:Dimension):
 
 @app.get('/getDimensions' ,tags=["Dimensions"])
 async def getDimenisons(name:str):
-    q2 = '''match(m:Model{name:$name}) -[:hasDimension]-> (d:Dimension) return collect(d) as Dim
+    q2 = '''match(m:Model{name:$name}) -[:hasDimension]-> (d:Dimension) 
+    return d.Rating as Rating, d.name as name, d.rank as rank, d.description as description,
+    d.weight as weight, d.cutOff as cutoff
+    ORDER BY d.rank
  '''
+    # return collect(d) as Dim
+    
     x = {"name":name}
     result = session.run(q2,x)
     data = result.data()
@@ -688,7 +689,7 @@ async def Max():
 class Survey(BaseModel):
     name:str;
     value:int
-
+    rank: int
 
 
 @app.get('/getResults' ,tags=["Survey"])
@@ -699,20 +700,23 @@ async def getResults(orgName:str,sname:str):
     result = session.run(q2,x)
     data = result.data()
     json_data = jsonable_encoder(data)
-    print(json_data)
-    return (json_data)
+    return json_data
+
+
+
 
 @app.get('/getarry' ,tags=["Survey"])
-async def getList(orgName:str,sname:str):
-    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) RETURN collect (v.value) as value
- '''
-    x = {"orgName":orgName,"sname":sname}
-    result = session.run(q2,x)
-    data = result.data()
-    json_data = jsonable_encoder(data)
-    print(json_data)
+async def getList():
+ #    q2 = '''match(o:Organisation{name:$orgName})-[:hadSurvey]->(s:SurveyedModel{name:$sname})-[:hasValue]->(v:Value) RETURN collect (v.value) as value
+ # '''
+ #    x = {"orgName":orgName,"sname":sname}
+ #    result = session.run(q2,x)
+ #    data = result.data()
+ #    json_data = jsonable_encoder(data)
 
-    return (json_data)
+     k = MPI.Censored_HeadCountRatio()
+     print(MPI.table)
+     return (k)
 
 
 @app.post('/postSurveyedResult',tags=["Survey"])
@@ -724,15 +728,87 @@ async def postSurveyedResult(orgName: str, sname: str):
 
 @app.post('/postResults',tags=["Survey"])
 async def postResults(survey:Survey,orgname,modelName):
-    q2 = '''MATCH(C: Organisation{name:$name}) -[:hadSurvey]->(m:SurveyedModel{name:$modelName}) create (m)-[:hasValue]->(r:Value{name:$vname,value:$value})'''
-    x={"name":orgname,"modelName":modelName,"vname":survey.name,"value":survey.value}
+    q2 = '''MATCH(C: Organisation{name:$name}) -[:hadSurvey]->(m:SurveyedModel{name:$modelName}) 
+    create (m)-[:hasValue]->(r:Value{name:$vname,value:$value, rank: $rank})'''
+    x={"name":orgname,"modelName":modelName,"vname":survey.name,"value":survey.value,
+       "rank":survey.rank}
     result = session.run(q2,x)
     data = result.data()
     json_data = jsonable_encoder(data)
     return ("SurveyResults added Successfully")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.get('/getCompanies/{model}' ,tags=["A"])
+async def getCompanies(model: str):
+    q2 = ''' MATCH (S: Survey) -[:hasOrganisation]->(O: Organisation) - [:hadSurvey] -> 
+            (SM: SurveyedModel{name:$model})
+             RETURN O.name as orgName
+             ORDER BY O.name'''
+    x = {"model":model}
+    result = session.run(q2,x)
+    data = result.data()
+    json_data = jsonable_encoder(data)
+    return json_data
+
+@app.get('/getAnalysisData/{model}' ,tags=["A"])
+async def getAnalysisData(model:str):
+    q2 = ''' MATCH (S: Survey) -[:hasOrganisation]->(O: Organisation) - [:hadSurvey] -> 
+            (SM: SurveyedModel{name:$model}) - [:hasValue] -> (V:Value)
+             RETURN O.name as orgName, V.name as name, V.value as value, V.rank as rank
+             ORDER BY O.name, V.rank'''
+    x = {"model":model}
+    result = session.run(q2,x)
+    data = result.data()
+    json_data = jsonable_encoder(data)
+    return json_data
+
+@app.get('/getAnalysisDataForCompany/{model}/{company}' ,tags=["A"])
+async def getAnalysisDataForCompany(model:str,company: str):
+    q2 = ''' MATCH (S: Survey) -[:hasOrganisation]->(O: Organisation{name:$company}) - [:hadSurvey] -> 
+            (SM: SurveyedModel{name:$model}) - [:hasValue] -> (V:Value)
+             RETURN O.name as orgName, V.name as name, V.value as value'''
+    x = {"model":model, "company": company}
+    result = session.run(q2,x)
+    data = result.data()
+    json_data = jsonable_encoder(data)
+    return json_data
+
+@app.get('/getDimensionDetails/{model}' ,tags=["A"])
+async def getDimensionDetails(model:str):
+    q2 = ''' MATCH (Models: Models) -[:hasModel]->(M:Model{name:$model}) - [:hasDimension] -> 
+            (D:Dimension) 
+            RETURN D.name as name, D.weight as weight, D.cutOff as cutoff
+             '''
+    x = {"model":model}
+    result = session.run(q2,x)
+    data = result.data()
+    json_data = jsonable_encoder(data)
+    return json_data
+
+
+
+
+
+
+
+
 session.close()
 graphdb.close()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='127.0.0.1', port=5000)
+    uvicorn.run(app, host='127.0.0.1', port=5001)
