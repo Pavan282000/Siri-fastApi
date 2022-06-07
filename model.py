@@ -561,13 +561,16 @@ async def addParentNode():
     return ("Parent node Created")
 
 @app.post('/postOrganisation/{name}',tags=["Organisation"])
-async def organisationDetails(name,sector):
+async def organisationDetails(name,sector,revenue,employeeCount):
+    date = datetime.date.today()
+    print(date)
     q2 = '''MATCH(C: Survey{name:"Survey"})
-                CREATE (C) -[:hasOrganisation]->(O: Organisation{name:$name,sector:$sector})'''
-    x={"name":name,"sector":sector}
+                CREATE (C) -[:hasOrganisation]->(O: Organisation{name:$name,sector:$sector,revenue:$revenue,employeeCount:$employeeCount,Surveydate:$date})'''
+    x={"name":name,"sector":sector,"revenue":revenue,"employeeCount":employeeCount,"date":date}
     result = session.run(q2,x)
     data = result.data()
     json_data = jsonable_encoder(data)
+    print(json_data)
     return ("Organisation node added")
 
 
@@ -686,10 +689,14 @@ async def Max():
             model = i['k']['name']
     return (max,model)
 
+
 class Survey(BaseModel):
     name:str;
     value:int
-    rank: int
+    rank:int
+
+
+
 
 
 @app.get('/getResults' ,tags=["Survey"])
